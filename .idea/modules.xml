@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/codility/codility.iml" filepath="$PROJECT_DIR$/codility/codility.iml" />
+      <module fileurl="file://$PROJECT_DIR$/concurrency/concurrency.iml" filepath="$PROJECT_DIR$/concurrency/concurrency.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dataStructures/dataStructures.iml" filepath="$PROJECT_DIR$/dataStructures/dataStructures.iml" />
+      <module fileurl="file://$PROJECT_DIR$/designPatterns/designPatterns.iml" filepath="$PROJECT_DIR$/designPatterns/designPatterns.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/digger.iml" filepath="$PROJECT_DIR$/.idea/digger.iml" />
+    </modules>
+  </component>
+</project>
