@@ -7,6 +7,8 @@
       <module fileurl="file://$PROJECT_DIR$/dataStructures/dataStructures.iml" filepath="$PROJECT_DIR$/dataStructures/dataStructures.iml" />
       <module fileurl="file://$PROJECT_DIR$/designPatterns/designPatterns.iml" filepath="$PROJECT_DIR$/designPatterns/designPatterns.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/digger.iml" filepath="$PROJECT_DIR$/.idea/digger.iml" />
+      <module fileurl="file://$PROJECT_DIR$/java8/java8.iml" filepath="$PROJECT_DIR$/java8/java8.iml" />
+      <module fileurl="file://$PROJECT_DIR$/java9/java9.iml" filepath="$PROJECT_DIR$/java9/java9.iml" />
     </modules>
   </component>
 </project>
