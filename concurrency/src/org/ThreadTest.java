@@ -2,7 +2,7 @@ package org;
 
 /**
  * All multi threading is built by the Thread class. All magic is done by the start0 method of Thread class.
- * it runs the run() method of targent object on a different thread started at OS.
+ * it runs the run() method of target object on a different thread started at OS.
  *
  * Thread.getAllStackTraces().keySet() return references to all running threads in JVM
  *
@@ -10,7 +10,7 @@ package org;
  *
  *
  * */
-public class ThreadTest extends Thread{ //Thread class is comming from java.lang
+public class ThreadTest extends Thread{ //Thread class is coming from java.lang
 
     public static SyncClass syncClass = new SyncClass();
 
