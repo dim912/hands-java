@@ -1,14 +1,17 @@
 package org.behavioral;
-
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implements the one to many way of message passing. Java has Observerbale class and Observer interface for this design pattern in mind
+ * Implements the one to many way of message passing => when the state of observable is changed. (Like broadcasting)
+ *
+ * . Java has Observerbale class and Observer interface for this design pattern in mind
  *
  * Observable does not couple with the observers. But deal through an interface.
  *
- * can be used to implement => subscribe / publish model
+ * can be used to implement => subscribe / publish model.
+ *
+ * Used in UI development. Ex : Swing listners for an UI Button.
  *
  * DownSide : May cause to memory leaks if forget to remove the observers from observerList.
  *
