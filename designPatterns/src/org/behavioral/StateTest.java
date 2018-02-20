@@ -1,6 +1,13 @@
 package org.behavioral;
 
 /**
+ *
+ * Used when Objects behaviour should be changed as per s FSM (Finite State machine)
+ * --------------------------------------------------------------------------------------
+ * One call to a doAction method(in a StateImplementation) might change the State Object at Context to nextState.
+ * Looks Similar with Stratergy pattern in implementation, But not in
+ *
+ *
  * Ties objects behaviour to its internal state => Helps to avoid conditional statemetns
  *
  * Used When
