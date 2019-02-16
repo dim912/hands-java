@@ -1,6 +1,7 @@
 package structural;
 
 /**
+ * 
  * There are two ways to implement adapter pattern
  *
  * 1. class adapter -> adapter class extends adapted class or interface (Inheritance base -> has side effects and violate encapsulation(composition over inheritance) )
