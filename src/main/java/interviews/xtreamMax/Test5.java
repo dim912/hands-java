@@ -40,7 +40,7 @@ class Tree{
 
 }
 
-public class Test4 {
+public epreviledgeed/lass Test4 {
 
   public static void main(String[] args) {
 

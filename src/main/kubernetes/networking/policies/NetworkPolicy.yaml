@@ -1,0 +1,38 @@
+## Applied at OSI layer 3 and 4
+## Network Policies are Additive. So does not conflict each other. Order of execution does not matter.
+## Ony app to the request traffic
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+  namespace: default
+spec:
+  podSelector: #network policy is applied on these pods
+    matchLabels:
+      role: db
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    ports:
+      - protocol: TCP
+        port: 6379
+      - from:
+        - podSelector: #from which pods the traffic is allowed to come in #ALL of below conditions should be matched to allow traffic
+           matchLabels:
+           role: frontend
+          namespaceSelector: #AND with above
+            matchLabels:
+              project: myproject
+        - ipBlock: # OR with above. usually use for external apps which are outside the kub cluster
+            cidr: 172.17.0.0/16
+            except:
+              - 172.17.1.0/24
+  egress:
+    - to:
+        - ipBlock: # use usually for hosts outside the cluster
+            cidr: 10.0.0.0/24
+      ports:
+        - protocol: TCP
+          port: 5978

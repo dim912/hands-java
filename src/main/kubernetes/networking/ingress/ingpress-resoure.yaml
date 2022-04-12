@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-wear
+annotations:
+  nginx.ingress.kubernetes.io/rewrite-target: /  # ingress to remove the matching path(postfix) from URL, since the backend is not designed to support it
+
+spec:
+ # backend:
+ #   serviceName: weare-service
+ #   servicePort: 80
+ defaultBackend:
+   service:
+     name: home-service
+     port:
+       number: 80
+  rules:
+     - host: video.myonlinestore.com
+       http:
+         paths:
+           - path: /video
+             pathType: Prefix
+             backend:
+               service:
+                 name: vedio-service
+                 port: 80
+          - path: /videoextended
+            pathType: Prefix
+            backend:
+              service:
+                name: vedioextended-service
+                port: 80
+     - host: wear.myonlinestore.com
+       http:
+         paths:
+           - path: /wear
+             pathType: Prefix
+             backend:
+               service:
+                 name: vedio-service
+                 port: 80
+           - path: /wearextended
+             pathType: Prefix
+             backend:
+               service:
+                 name: vedioextended-service
+                 port: 80

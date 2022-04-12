@@ -1,0 +1,132 @@
+apiVersion: v1 # apps/v1
+kind: Pod # pod, seervice , replica set, depolyment
+metadata:
+  name: mayapps-pod #name of the pod
+  labels: #lables are consumed by selectors
+    app: myapp
+    type: front-end
+    costcenter: amer
+  annotations: #annotatons are only for information purpose
+    buildVersion: 1.0
+    devepoer: Dimuthu Senanayaka
+spec:
+  serviceAcccountName: dashboard-sa #this will auto bring the token as a volume (and now the default service account will not be mounted)
+  #automountServiceAccountToken: choose not to mount default service account
+  securityContxt: #security context at spec level is applied to all the containers in the POD
+    runAsUser: 1000
+    capabilities:
+      add: ["MAC_ADMIN"]  #add capabilities to the user
+  tolerations: #all values has to be within double quots
+    - key: "app"
+      operator: "Equal"
+      value: "blue"
+      effect: "NoExecute" #once this pod is deployed what should happen to the existing pods in node who does not have tolereation
+  containers:
+    - name: nginx-container
+      securityContxt: #security context at container level override the security context coming from pod
+        runAsUser: 1000
+        capabilities:
+          add: ["MAC_ADMIN"]
+      image: nginx
+      livenessProbe: # kube test the liveness and restart the pod if app is not live. for app which already in Ready state
+        hettpGet:
+          path: /api/info
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds : 5
+        failureThreshold: 5
+      # tcpSocket:
+      #   port: 3306
+      # exec:
+      #   command:
+      #     - cat
+      #     - /app/is_Ready
+      readinessProbs: #to decide it is good to route traffic just after restart(Running State). if the container inside the pod is killed -> then container get restart and traffic does not come to container until container is ready
+        httpGet:
+          path: /api/actuator # container will not become Ready until this test is success
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds : 5
+        failureThreshold: 5
+      # tcpSocket:
+      #   port: 3306
+      # exec:
+      #   command:
+      #     - cat
+      #     - /app/is_Ready
+      command: ["sleep2"] #mapps to entrypoint of docker
+     #command: ['expr', '3', '+', '2'] #container just do this operation and die. container gets again and again created until the threshold. to avoid these restarts we can set podLevel property restartPolicy: Never (default is always)
+      #command:
+        #- "sleep"
+        #- "1200"
+      agrs: ["10"]  #will be passed to docker as startup defult argumnets CMD
+      envFrom:
+        - configMapRef:
+            name: app-config #set app-config as env variables in the container
+        - secretRef:
+            name: app-secrets #read secret file and set as env variables
+      nodeSelector:
+        size: Large  #matches the large label on the node
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            matchExpressions:
+              - key: size
+                operator: In
+                values:
+                  - Large
+                  - Medium
+                #- key: size
+                #operator: NotIn
+                #values:
+                #  - Small
+                #- key: size
+                #operator: Exists #check only if label exists
+      resources: #at container level
+        requests:  #requirment to start the pod
+          cpu: 1  # possible 0.1, 100m(m stands ofr milli), minimum is 1m. (cpu=1 => means 1 vcpu aws).  (docker world does not have a limit for resuce usage)
+          memory: "1Gi" #256Mi, 1G(1000MB), 1Gi(1024MB)
+        limit:
+          cpu: 2 #kub throtal CPU usage at 2
+          memory: "2Gi"  #kub DOES Not throtal memory. but if the container use exceeling limit of memory -> kub kills the container
+      env:
+        - name: APP_COLOR_ENV #environmnet variabls
+          value: pink
+        - name: APP_COLOR_CONFMAP
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: APP_COLOR
+        - name: APP_COLOR_SECRET_REF
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              value: db-password
+      volumeMounts:
+        - mountPath: /opt
+          name: data-volume-on-node
+        - mountPath: /apps
+          name: pvc-volume
+  volumes:   # each value in the config/secret is created as a file in the pod /opt directory. at spec level of the pod
+    - name: pvc-volume
+      persistentVOlumeClaim:
+        claimName: myClaim
+    - name: sahred-data-volume  #this is a common data store shared between nodes
+    - name: data-volume-on-node  #expose a directory in the host to be used as a volume in container
+      hostPath:  #directory on host
+        path: /data
+        type: Directory
+    - name: sahred-data-volume  #this is a common data store shared between nodes
+      awsElasticBlockStore:
+        volumeID: <vol-id>
+        fsType: ext4
+    - name: app-conf-volume
+      configMap:
+        name: app-config
+    - name: app-secret-volume
+      secret:
+        secretName: app-secret
+
+
+
+#kubectl create -f pod-definition.yml

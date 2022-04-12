@@ -1,5 +1,0 @@
-clsuter -> node -> pods -> container
-
-1) same app does not create multiple tmes within same pod
-2) but app and helper apps can be created within same pod
-       -> 

@@ -1,0 +1,21 @@
+apiVersdon: v1
+kind: Service
+metadata:
+  labels:
+    app: ginx-service
+  name: ginx-service
+  namespace: default
+spec:
+  type: NodePort
+  clusterIP: 10.105.192.117
+  clusterIPs:
+    - 10.105.192.117
+  ports:
+    - name: "80"
+      nodePort: 30431
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    name: nginx-ingpress
+

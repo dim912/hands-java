@@ -21,7 +21,7 @@ spec:
   replicas: 3
   selector: #mandatory for rs #identify what pods falls under it. becuase rs can handle pre created pods also (this is a difference between rc and rs)
     matchLabels: #to idenfity and monitor the pods
-      tire: uat
+      tire: uat   #between lables &
       type: front-end
 
 

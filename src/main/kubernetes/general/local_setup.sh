@@ -35,5 +35,3 @@ minikube addons list #catalog of installed services
 minikube start -p aged --kubernetes-version=v1.16.1 #install an old kub cluster
 minikube delete --all
 
-
-

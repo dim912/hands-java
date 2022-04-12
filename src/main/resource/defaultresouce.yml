@@ -1,0 +1,15 @@
+
+apiVersion: v1
+kind: LimitRange  #this object limits the resource usages
+metadata:
+  name: limit-range
+spec:
+  limits:
+    - default:
+        memory: 512Mi
+        cpu: 1
+      defaultRequest:
+        memory: 256Mi
+        cpu: 0.5
+      type: Containe
+
