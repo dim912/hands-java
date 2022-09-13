@@ -21,6 +21,25 @@ spec:
       operator: "Equal"
       value: "blue"
       effect: "NoExecute" #once this pod is deployed what should happen to the existing pods in node who does not have tolereation
+  nodeName: foo-node #simple
+  nodeSelector: #simple
+    size: Large  #matches any of the labels (size or owner)
+    owner: dimu
+  nodeAffinity: #matches to the labels on the node. complex req
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        matchExpressions:
+          - key: size
+            operator: In
+            values:
+              - Large
+              - Medium
+            #- key: size
+            #operator: NotIn
+            #values:
+            #  - Small
+            #- key: size
+            #operator: Exists #check only if label exists
   containers:
     - name: nginx-container
       securityContxt: #security context at container level override the security context coming from pod
@@ -28,32 +47,36 @@ spec:
         capabilities:
           add: ["MAC_ADMIN"]
       image: nginx
-      livenessProbe: # kube test the liveness and restart the pod if app is not live. for app which already in Ready state
+      livenessProbe: # kube test the liveness and restart the pod if app is not live. for app which already in Ready state.
+      # livenessProbe can kill the app before it starts up if configured wrongly (Ex: )
         hettpGet:
           path: /api/info
           port: 8080
-        initialDelaySeconds: 10
-        periodSeconds : 5
-        failureThreshold: 5
+        initialDelaySeconds: 10 #wait 10 sec before the first once the container is started
+        periodSeconds : 5 #check liveness every 5 sec
+        failureThreshold: 5 #after 5 times pod is not considered live
+        successThreshold: 5 #after how many success evnets -> should be pod be considred live
       # tcpSocket:
       #   port: 3306
       # exec:
       #   command:
       #     - cat
       #     - /app/is_Ready
-      readinessProbs: #to decide it is good to route traffic just after restart(Running State). if the container inside the pod is killed -> then container get restart and traffic does not come to container until container is ready
+      readinessProbs: #called not only at the startup. this is used to know if the app is fine to serve traffic.
+      # to decide it is good to route traffic (Running State). if the container inside the pod is killed -> then container get restart and traffic does not come to container until container is ready
         httpGet:
           path: /api/actuator # container will not become Ready until this test is success
           port: 8080
         initialDelaySeconds: 10
         periodSeconds : 5
-        failureThreshold: 5
+        failureThreshold: 5  # default is 3. after failureThreshould the pod will not be considred ready
       # tcpSocket:
       #   port: 3306
       # exec:
       #   command:
       #     - cat
       #     - /app/is_Ready
+      startUpProbs: # when this is configured -> both rediness and liveness probs are not becomming active until startUp prob is ready. (this is since the start up of the app can take a long time which is not considred by liveness and readiness probs)
       command: ["sleep2"] #mapps to entrypoint of docker
      #command: ['expr', '3', '+', '2'] #container just do this operation and die. container gets again and again created until the threshold. to avoid these restarts we can set podLevel property restartPolicy: Never (default is always)
       #command:
@@ -65,23 +88,6 @@ spec:
             name: app-config #set app-config as env variables in the container
         - secretRef:
             name: app-secrets #read secret file and set as env variables
-      nodeSelector:
-        size: Large  #matches the large label on the node
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-            matchExpressions:
-              - key: size
-                operator: In
-                values:
-                  - Large
-                  - Medium
-                #- key: size
-                #operator: NotIn
-                #values:
-                #  - Small
-                #- key: size
-                #operator: Exists #check only if label exists
       resources: #at container level
         requests:  #requirment to start the pod
           cpu: 1  # possible 0.1, 100m(m stands ofr milli), minimum is 1m. (cpu=1 => means 1 vcpu aws).  (docker world does not have a limit for resuce usage)
@@ -126,7 +132,5 @@ spec:
     - name: app-secret-volume
       secret:
         secretName: app-secret
-
-
 
 #kubectl create -f pod-definition.yml

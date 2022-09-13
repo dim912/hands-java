@@ -1,19 +1,27 @@
+
 alias k=kubectl
-k config set-context mycontext --namespace=mynamespace
+alias kdp='kubectl delete pod --force --grace-period=0'
+k config set-context mycontext --namespace=mynamespace  #this only config the kubectl tool. But not anything related to cluster
 :set expandtab #when copy convert tabs into spaces
 
-kubectl explain pods --recursive | grep envFrom -A3
+kubctl cluster info
+kubectl create namespace dev
+kubectl config set-context $(kubectl config current-contxt) --namespace=dev #context is a different topic all together
+alias kdp='kubectl delete pod --force --grace-period=0'
+
+kubectl explain pods --recursive | grep envFrom -A3 -B5
 
 kubectl get all
 kubectl get pods
 kubectl get pods --show-labels
 kubectl get pods,svc
 kubectl get pods --namespace kubsystem
-kubectl get pods -o wide
+kubectl get pods -o wide  #extra info
 kubectl get pods --all-namespaces
 kubectl get pods --all-namespaces --no-headers
 kubectl get pods --selector app=App1   #filter by selector
 kubectl get netpol
+kubectl delete pod --all
 kubectl get po --selector env=prod,bu=finance,tier=frontend # here and condition between labels. if multiple --selector is used then or condition
 kubectl describe pod mayapps-pod
 
@@ -22,7 +30,8 @@ kubectl api-resources
 
 #pod
 kubectl run nginx --image nginx #create pod
-kubectl run nginx --image nginx  #create pod
+kubectl run nginx --image nginx  --labels=env=prd,type=web --port:8080
+kubectl run nginx --image=nginx --port=8080 --expose
 kubectl run nginx --image nginx --dry-run=client -o yaml > pod.yml #create the declaration without actually sending the request to cluster
 ubectl run redis --image=redis:alpine --labels=tier=db
 kubctl edit pod redis #edit on the fly
@@ -47,7 +56,7 @@ kubectl scale --replicas=6 -f replicaset rc-name #no need to modify file
 kubectl create deployment nginx --image=nginx
 kubectl create deployment nginx --image=nginx --replicas=4
 kubectl scale deployment nginx --replicas=4 #scaling an existing deployment
-kubectl delete deployment nginx
+kubectl delete deployment nginx    #this will deploy RS as well
 kubectl get pod nginx -o yaml > pod-definition.yaml
 
 #namespaces (defaults) - isolating resources
@@ -60,21 +69,18 @@ kubectl get pod nginx -o yaml > pod-definition.yaml
 #db-service.dev.svc.cluster.local
 #service.namepsace.<fully qualified cluster name>
 
-kubectl create namespace dev
-kubectl config set-context $(kubectl config current-contxt) --namespace=dev #context is a different topic all together
-
-#service
-k expose pod redis --port=23423 --name redis-service --dry-run=client -o yaml
-k create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml #assume app=redis label
-k expose pod nginx --port=80 --name nginx-service --type=NodePort --dry-run=client -o yaml #create a service named ngnx with type nodePort
-kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml #pod labels as selectors
-
 #editing pods
-#only below can be edited (ex: env variables, service acounts, resoure limits can not be edited)
+#only below can be edited
   # containers.image
   # initcontainers.image
   # activeDeadlineSEconds
   # spec.tolerations
+
+#can not edit (need to )
+  # env variables
+  # service acounts
+  # resoure limits can not be edited
+
 kubctl edit pod nginx #when non editable filed is touch, -> a temp yaml will be created
 #if lock for edit. delete the pod and then create using the yaml
 #best way to edit a any property of the POD is editing its deploymnet (this will auto delete and recreate the PODS with new configs)
@@ -94,19 +100,20 @@ kubectl -n webhook-demo create secret tls webhook-server-tls \
 
 #serice accounts
 #user accounts - for human users
-#service accounts - which are used to interact with clusetre. Ex: user used by jenkins / dashboard etc
+#service accounts - which are used to interact with clusetre. Ex: user used by jenkins / dashboard etc.
+#when a sa is created -> related secret gets auto created
 
 kubectl create serviceaccount dashboard-sa #this create a token for the user. this token should be used to interact(bearer token) for http api
 kubectl get serviceaccount
 kubectl describe serviceaccount dashboard-sa
 kubectl describe secret dashboard-sa-token-52qvb
-#for apps internal to the cluster -> this token can be mount as a volum and use within the app (Ex: dahboard app running within the cluster)
+#for apps internal to the cluster -> this token can be mount as a volume and use within the app (Ex: dahboard app running within the cluster)
 #default service account :  there is a one for each namespace(named default).
 #when pod is created by default the default service account token is mounted
 #within the pod -> token is mounted as three different files
       # ca.crt , namespace, token
-kubectl exec -it nginx ls /var/run/secrets/kubernetes.io/serviceaccount
-kubectl exec -it nginx cat /var/run/secrets/kubernetes.io/serviceaccount
+k exec -it redis ls /run/secrets/kubernetes.io/serviceaccount
+k exec -it redis ls /run/secrets/kubernetes.io/serviceaccount
 #default service accunt is very much restricted - only provide basic access
 
 
@@ -120,15 +127,15 @@ kubectl exec -it nginx cat /var/run/secrets/kubernetes.io/serviceaccount
 #Taint
 kubectl taint nodes node-name key=value:taint-effect
 kubectl taint nodes node-name app=blue:NoSchedule
-kubectl taint nodes node1 key1=value1:NoSchedule- #remove taint
+kubectl taint nodes node1 key1=value1:NoSchedule- #remove taint(- do this)
 #taint-effect -> what happen to pod if they do not tolarate taint
   #noSchedule  -> do not put the pod. but existing pods will keep until they are deleted
   #PreferNoSchedule -> try best not to place pod
-  #NoExecute -> no new scheduling and existing pods will also be removed
+  #NoExecute -> no new scheduling and existing pods will also be removed. (Removed pods will be direct deleted)
 
 #toleratons -> a pod level config
 #by defefult -> in master node there is traint not to scheule any worker pods since it is dedeicated for managemnt software
-kubectl describe node kubemaster | grep Taint
+kubectl describe node kubemaster | grep taint
 
 #node selectors (only for simple usecases. Ex: place the pod on large or small, or anything that is not small -> can not be achived though node selectors )
 kubectl label nodes node-name key=value
@@ -136,10 +143,18 @@ kubectl label nodes node10 size=Large
 
 #node affinity (to eunsure pods are placed on desired nodes)
 
-#Multi Container PODs -. share life cycle, same network, PV.yaml
-    # SIDECAR - ex : login server which collect logs and forwared to server
+#Multi Container PODs -. share life cycle, same network, PV.yaml.
+    # SIDECAR - ex : login server which collect logs and forwared to server. Rus
+         # contains the main app and a helper container which is essential but not a part of the main app
+         #  Ex: login server which collect logs and fwd to server(ex: splunk agent). sync agenet, monitoring agent,
     # ADAPTER -
+         # Ex: normalize/simplity the login output before sending to the splunk (aggregator)
     # AMBESIDER - a service which use to connect to DB
+         # connect container to external world(like proxy)
+         # Ex : connecting to multiple DBs (based on the evn connect to dev,uat,prod databases) - mysql-proxy
+    # INIT container
+         # Always runs to completion. once all init contiainers are complted, then only the app container stats
+         # Ex: download all html files before starting the nginx app container to a shared container
 
 #life cycle (conditions)
 #Pending ->  -> podScheduled -> Initialized -> ContainersReady(when all containers started) -> Ready(Means ready to accept traffic)
@@ -174,7 +189,7 @@ kubectl top pod  #pulls metrices from metrics server and show
 
 #stratergis
 #ReCreate       - first destroy all and create new  -> #app is down between kill and create
-#Rolling update- default stratergy is  Rolling Updates -> deploy pod by pod (app does not go down)
+#Rolling update- default stratergy is  Rolling Updates -> deploy pod by pod (app does not go down. A new rs is created with the the new udpates)
 
 #once the changes are applied on deployment.yml file (Ex : updating the image of container)
 kubectl apply -f deployment-definitio.yml
@@ -205,17 +220,21 @@ kubectl create -f cronjob-definition.yaml
 #Services - helps connect apps together. loose coupling between microservices
 kubectl create service nodeport my-svc --tcp=80
 kubectl expose deployment simple-webapp-deploy --name=myservice --target-port=8080 --type=NodePort --port=8080 --dry=run -o yaml
+k expose pod redis --port=23423 --name redis-service --dry-run=client -o yaml
+k create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml #assume app=redis label
+k expose pod nginx --port=80 --name nginx-service --type=NodePort --dry-run=client -o yaml #create a service named ngnx with type nodePort
+kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml #pod labels as selectors
 
 
-#ClusterIP     - SErvice creates a virtual IP inside cluster to enable communication to setup to backend apps
-#NodePort      - make internal port accssible thorough a port on node even outside clusetr. This automatically creates a ClusterIP too.
+#ClusterIP     - SErvice creates a virtual IP inside cluster to enable communication to setup to backend apps. can be accessed by every pod and every node.
+#NodePort      - make internal port accssible thorough a port on node even outside clusetr. This automatically creates a ClusterIP too. (using node IPs)
 #LoardBalancer - prvison LB for distibution of load between servers
 
 #NodePort - think as a virual server in node -  (pod - targetPort)80 -> (service -Port )80 -> (node - nodePort)30008 (NodePort is in valid range : 30000 - 32767)
 
 #a service can be spraed in multipel nodes (with each node having multiple nodes) - so service can be access from any IP
 
-#Cluster IP :  provides a single cluserIp or serviceName to provide group of pods9
+#Cluster IP :  provides a single cluserIp or serviceName to provide group of pods ( works only within the cluster)
 #LoadBalancer Type: Kube send a command to Kube provider(Ex: GCP) to provision a LB which has an external IP/TLS (https://mycompany.com)
 
 #INGRESS
@@ -272,10 +291,9 @@ kubectl expose deployment simple-webapp-deploy --name=myservice --target-port=80
 
 
 #Volume
-  #generalling define within the pod spec and use inside the containers  (volume may be in node or a shared disk like AWS EBS)
+  #define within the pod spec and use inside the containers  (volume may be in node or a shared disk like AWS EBS)
 
-  #    Persistent Volume (PV.yaml) - live in a cluster wide centrally created storage managed by the Kube Admin
-
+# Persistent Volume (PV.yaml) - live in a cluster wide centrally created storage managed by the Kube Admin
 
 # Usually PVs are created by the cluster admins and claims are created by the app Devs
 # Once PVC are created they are 1-1 matched to PVs by Kub my best match basis
@@ -291,7 +309,6 @@ kubectl delete persistentvolumeclaim myclaim  # remove data. but not PV
 # then it goes to Terminating Status(Stuck there). But as soon as POD is deleted, PVC goes from terminating state to deleted status
 #and PV goes to Released status
 #pod/container -> has to bind to PVC the say how other volums
-
 
 #storage classes
 
@@ -315,10 +332,7 @@ kubectl delete persistentvolumeclaim myclaim  # remove data. but not PV
           # each node gets unique index -> and a unique name containing the unique index (mysql-1 <- can be used as master, mysql-2, mysql-3)
           # This index is a stickey idenfifier (even POD get restart/recreated the index does not change)
 
-
 #healess Service
-  #
-
 
 #Security in Kubenetes
 
@@ -461,15 +475,15 @@ kubectl auth can-i delete nodes
 kubectl auth can-i create deployments --as dev-user --namespace testspace
 kubectl auth can-i delete nodes --as dev-user --namespace testspace
 
-#Cluster Roles and bindings (for cluster scoped resouces)
-    # for resouces which are common to all name spaces
+#Cluster Roles and bindings (for cluster scoped resources)
+    # for resources which are common to all name spaces
               # Ex :
               # - Nodes  (nodes are at cluster level)
               # - PV (nodes are at cluster level)
               # - clusterRole (nodes are at cluster level)
               # - clusterRolebidnings (nodes are at cluster level)
               # -namespaces (nodes are at cluster level)
-   # ex : Cluster Addmin, Storrage Admin
+   # ex : Cluster Admin, Storage Admin
    # ClusterRoles can be created for NS level resocues too -> then the user who gets the access will have access accorss all the NSs.
 
 #Role and RoleBinding are at ==> API level. to go beyond that Admission Control is required
@@ -529,13 +543,13 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
 
 # API Versions
      # Each API group has different versions
-          # /v1 -> GA statble version (Generally available stable version)
-          # /v1alpha1 -> first develpoed and available for the fist time in API suite (Not enabled by default. since there API are not gaurennteed to work well or availabel in future). these are only for expert users
-          # /v1beta1 -> enabled by default. tested and confired. this will go to GA in future.
+          # /v1 -> GA stable version (Generally available stable version)
+          # /v1alpha1 -> first developed and available for the fist time in API suite (Not enabled by default. since there API are not gaurennteed to work well or available in future). these are only for expert users
+          # /v1beta1 -> enabled by default. tested and confirmed. this will go to GA in future.
 
           #same API can be available with multiple versions. Ex: /apps   has /v1, /v1alpha1 , /v1beta1
-          #but only one of above is marked as the preferred/storage version. so general kubectl commands refer this version. (only one can be preffered version)
-          #for other versions, when changes are saved to etcd database, values will be autocoverted to preferred/storage version
+          #but only one of above is marked as the preferred/storage version. so general kubectl commands refer this version. (only one can be preferred version)
+          #for other versions, when changes are saved to etcd database, values will be auto converted to preferred/storage version
 
 
 #enable disable API groups, add below in API server configs
@@ -559,33 +573,33 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
             # here it must added duration into v1alpah1 as well.
 
 
-        # no let say API is ready for beta relase
+        # now let say API is ready for beta release
             # first release /v1beta1 -> then goes to v1beta2 -> finally release /v1
 
-        #older versions can be deppicated and removed over releases
+        #older versions can be deprecated and removed over releases
 
-        # other than most recent API version in each track, old API versions muct be supported after their announced depcication for duration no les than
+        # other than most recent API version in each track, old API versions must be supported after their announced deprecation for duration no les than
             # GA  : 12 months or 3 release (which is longer)
             # Beta: 9 months or 3 release (which is longer)
             # Alpha: 0 releases
-
 
          # RELEAE    Available Versions
          #    X     -> v1alpah1 (first ever release which contain School API group)
          #    X+1   -> v1alpah2 (since it is still at alpha versions it is not required to keep alpha1 in the release) (this is a breaking update for users how were using the alpha1 api). So this has to be mentioned in the release notes
          #    X+2   -> v1beta1 (no need to contain v1alpa2)
-         #    X+3   -> v1beta2 ( new beata version is released and v1beta1 will be still there in this release as depricated. but is not removed. if anyone use v1beta1 -> a deprication warning will be displayed)
-                    # but still v1beta1 is the preferred version. this is because an newly commng version can not be the preferred version in the first release itself
-         #    X+4   -> both v1beta1 and v1beta2 are still available. but now v1beta2 is the prefered version
-         #    X+5   -> lets say /v1 is added here. but v1beta2 is the preferred but both v1beta1 and v1beta2 both are depricated
-         #    X+6   -> v1 is refered now. and v1alpha1 is removed
+         #    X+3   -> v1beta2 ( new beata version is released and v1beta1 will be still there in this release as deprecated. but is not removed. if anyone use v1beta1 -> a deprecation warning will be displayed)
+                    # but still v1beta1 is the preferred version. this is because an new coming version can not be the preferred version in the first release itself
+         #    X+4   -> both v1beta1 and v1beta2 are still available. but now v1beta2 is the preferred version
+         #    X+5   -> lets say /v1 is added here. but v1beta2 is the preferred but both v1beta1 and v1beta2 both are deprecated
+         #    X+6   -> v1 is preferred now. and v1alpha1 is removed
          #     .
          #     .
          #     .
-         #    X+4   -> v2alpha1 is introduced. But v1 is still prefered (can not depricate v1 yet since v2 is only alpha yet). until /v2 is intoduced can not depricate /v1
+         #     .
+         #    X+4   -> v2alpha1 is introduced. But v1 is still preferred (can not deprecate v1 yet since v2 is only alpha yet). until /v2 is introduced can not deprecate /v1
 
 
-   #kubectl convert command (once a api version is removed -> will require to to update exising definition files to new version)
+   #kubectl convert command (once a api version is removed -> will require to to update existing definition files to new version)
    #this command is a plugin and not available by default in kubectl utility
    kubectl convert -f old-file.yaml --output-version apps/v1
 
@@ -593,22 +607,22 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
 
     # when resources are created -> their information/status are saved in ETCD database
 
-    # Controllers - are responsible for manupulating the Kube Objects as per their definitions
-        # Ex: when 'kubectl create Deploymnet' is called -> this is handled by the Deployment Controller
-        # Controller Contineously listen to the definiton objects and accordingly provision changes
+    # Controllers - are responsible for manipulating the Kube Objects as per their definitions
+        # Ex: when 'kubectl create Deployment' is called -> this is handled by the Deployment Controller
+        # Controller continuously listen to the definition objects and accordingly provision changes
 
 # Custom Controller
     # can write in any language. and run as a pod in the cluster itself. (this app is responsible to monitor changes to changes)
 
 # Operator Framework
-    # used to build and deploy CRD and Controllers together as a single entity
+    # used to build and deploy CRD(Custom Resource Definition) and Controllers together as a single entity
     # Additional features
         # take backups
         # restore backups
    # operators are available at : https://operatorhub.io/
 
 
-# Blue-Green stratergy (additonal to Recreate and Rolling{default} which were discussed before)
+# Blue-Green strategy (additional to Recreate and Rolling{default} which were discussed before)
      # blue(labeled with version:v1)  - currently up and running and Service route traffic to it (selector on the service is => version:v1)
      # green(labeled with version:v2) - new version is deployed and tested. when looking fine, change the selector on the service to version:v2
 
@@ -621,13 +635,13 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
     # now use this common label at service as the selector
 
     #one disadvantage is : no control on the traffic that comes to canary. it is only limited by number of pods
-        # Here Istio come handy where a controlled amount of traffic can be routed to the canary with out dependeing on the number of PODs
+        # Here Istio come handy where a controlled amount of traffic can be routed to the canary with out depending on the number of PODs
 
 
 #HELM - package/release manager - treat apps as apps. (not as set of objects which is the case in Kub)
 
-    # Kube is not aware about the eco system of the app (Deploymnet, services, PV, PVC, secret etc)
-    # Helm - knows about the app - called as Package Manager (Group things like Deploymnet, serivce... related with the app)
+    # Kube is not aware about the eco system of the app (Deployment, services, PV, PVC, secret etc)
+    # Helm - knows about the app - called as Package Manager (Group things like Deployment, Services... related with the app)
     helm install wordpress .... # creates all required kube objects required for wordpress
     helm update wordpress
     helm rollback wordpress
@@ -635,8 +649,8 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
 
 #HELM Concepts
 
-    # creates teamplates of kube yaml definiton files and then values are passed from helm config file (value.yaml)
-    # together kube tempalte yaml and value.yaml creates the hel chart
+    # creates templates of kube yaml definition files and then values are passed from helm config file (value.yaml)
+    # together kube template yaml and value.yaml creates the helm chart
     # common charts can be found on repository https://artifacthub.io/
     help search hub wordpress #(community driven)
     #for other repos
@@ -653,7 +667,7 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
               helm install release-1 bitnamei/wordpress
               helm install release-2 bitnamei/wordpress
               helm install release-3 bitnamei/wordpress
-        #each release is compltely independent to each other
+        #each release is completely independent to each other
               helm uninstall release-1
 
         #download but do not install
@@ -661,59 +675,3 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
 
         #list packages
               helm list
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

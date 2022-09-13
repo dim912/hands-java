@@ -1,0 +1,4 @@
+syllabus -  https://www.cncf.io/certification/ckad/
+
+# booking - https://trainingportal.linuxfoundation.org/learn/course/certified-kubernetes-application-developer-ckad/exam/exam
+# exam is on Ubuntu 20.04
