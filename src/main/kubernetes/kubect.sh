@@ -1,13 +1,15 @@
-
+#ubuntu
 alias k=kubectl
 alias kdp='kubectl delete pod --force --grace-period=0'
 k config set-context mycontext --namespace=mynamespace  #this only config the kubectl tool. But not anything related to cluster
-:set expandtab #when copy convert tabs into spaces
 
-kubctl cluster info
+# vim ~/.vimrc
+set rnu
+set expandtab #when copy convert tabs into spaces
+
+kubctl cluster-info
 kubectl create namespace dev
 kubectl config set-context $(kubectl config current-contxt) --namespace=dev #context is a different topic all together
-alias kdp='kubectl delete pod --force --grace-period=0'
 
 kubectl explain pods --recursive | grep envFrom -A3 -B5
 
@@ -17,9 +19,9 @@ kubectl get pods --show-labels
 kubectl get pods,svc
 kubectl get pods --namespace kubsystem
 kubectl get pods -o wide  #extra info
-kubectl get pods --all-namespaces
+kubectl get pods --all-namespaces #(-A)
 kubectl get pods --all-namespaces --no-headers
-kubectl get pods --selector app=App1   #filter by selector
+kubectl get pods --selector app=App1   #filter by selector (-l)
 kubectl get netpol
 kubectl delete pod --all
 kubectl get po --selector env=prod,bu=finance,tier=frontend # here and condition between labels. if multiple --selector is used then or condition
@@ -30,8 +32,8 @@ kubectl api-resources
 
 #pod
 kubectl run nginx --image nginx #create pod
-kubectl run nginx --image nginx  --labels=env=prd,type=web --port:8080
-kubectl run nginx --image=nginx --port=8080 --expose
+kubectl run nginx --image nginx  --labels=env=prd,type=web --port:8080 #this containerPort is for info only
+kubectl run nginx --image=nginx --port=8080 --expose  # this creates a clusterIP
 kubectl run nginx --image nginx --dry-run=client -o yaml > pod.yml #create the declaration without actually sending the request to cluster
 ubectl run redis --image=redis:alpine --labels=tier=db
 kubctl edit pod redis #edit on the fly
@@ -46,7 +48,7 @@ kubectl apply -f pod.xml
 kubectl create -f rc-definition.yml
 kubectl get replicationcontroller
 
-#replicaset
+#replicaset (no create command)
 kubectl get replicaset
 kubectl delete replicaset
 kubectl replace -f rc-definition.yml #has to modify file
@@ -674,4 +676,5 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
               helm pull --untar bitnami/wordpress
 
         #list packages
+alias kdp='kubectl delete pod --force --grace-period=0'
               helm list
