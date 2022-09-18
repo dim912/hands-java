@@ -12,10 +12,10 @@ metadata:
 spec:
   serviceAcccountName: dashboard-sa #this will auto bring the token as a volume (and now the default service account will not be mounted)
   #automountServiceAccountToken: choose not to mount default service account
-  securityContxt: #security context at spec level is applied to all the containers in the POD
+  securityContext: #security context at spec level is applied to all the containers in the POD. what the POD or container can do on the host VM
     runAsUser: 1000
     capabilities:
-      add: ["MAC_ADMIN"]  #add capabilities to the user
+      add: ["MAC_ADMIN"]  #add capabilities to the user. Only posisble at container level. Not at POD level.
   tolerations: #all values has to be within double quots
     - key: "app"
       operator: "Equal"
@@ -48,7 +48,9 @@ spec:
           add: ["MAC_ADMIN"]
       image: nginx
       livenessProbe: # kube test the liveness and restart the pod if app is not live. for app which already in Ready state.
+      # if the container inside the pod is killed -> then container get restart and traffic does not come to container until container is ready
       # livenessProbe can kill the app before it starts up if configured wrongly (Ex: )
+      # ex : container may be stuck or malfunctionaing --> then liveness prob should fail
         hettpGet:
           path: /api/info
           port: 8080
@@ -63,7 +65,7 @@ spec:
       #     - cat
       #     - /app/is_Ready
       readinessProbs: #called not only at the startup. this is used to know if the app is fine to serve traffic.
-      # to decide it is good to route traffic (Running State). if the container inside the pod is killed -> then container get restart and traffic does not come to container until container is ready
+      # to decide it is good to route traffic (Running State). if readinessProb is failing then container is restarted
         httpGet:
           path: /api/actuator # container will not become Ready until this test is success
           port: 8080
@@ -77,14 +79,14 @@ spec:
       #     - cat
       #     - /app/is_Ready
       startUpProbs: # when this is configured -> both rediness and liveness probs are not becomming active until startUp prob is ready. (this is since the start up of the app can take a long time which is not considred by liveness and readiness probs)
-      command: ["sleep2"] #mapps to entrypoint of docker
+      command: ["sleep2"] #mapps to entrypoint of docker. and override the exising entrypoint defined with the docker image. This ignores both entry point and CMD provided in docker file and only cun command given here.
      #command: ['expr', '3', '+', '2'] #container just do this operation and die. container gets again and again created until the threshold. to avoid these restarts we can set podLevel property restartPolicy: Never (default is always)
       #command:
         #- "sleep"
         #- "1200"
-      agrs: ["10"]  #will be passed to docker as startup defult argumnets CMD
+      agrs: ["10"]  #will be passed to docker as startup defult argumnets CMD. (to the command available with in the docker image itself)
       envFrom:
-        - configMapRef:
+        - configMapRef: #no need to mount the configMap
             name: app-config #set app-config as env variables in the container
         - secretRef:
             name: app-secrets #read secret file and set as env variables

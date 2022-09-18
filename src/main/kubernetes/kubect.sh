@@ -102,7 +102,7 @@ kubectl -n webhook-demo create secret tls webhook-server-tls \
 
 #serice accounts
 #user accounts - for human users
-#service accounts - which are used to interact with clusetre. Ex: user used by jenkins / dashboard etc.
+#service accounts - which are used to interact with cluster. Ex: user used by jenkins / dashboard etc.
 #when a sa is created -> related secret gets auto created
 
 kubectl create serviceaccount dashboard-sa #this create a token for the user. this token should be used to interact(bearer token) for http api
@@ -127,7 +127,7 @@ k exec -it redis ls /run/secrets/kubernetes.io/serviceaccount
 #taints and tolleration does not attract any pods. but it only reject/accept if schedular attempt to scheule the pod
 
 #Taint
-kubectl taint nodes node-name key=value:taint-effect
+kubectl taint nodes node-name key=value:taint-effect ## if the POD does not have a tolerent as key=value, then not allow to place the pod
 kubectl taint nodes node-name app=blue:NoSchedule
 kubectl taint nodes node1 key1=value1:NoSchedule- #remove taint(- do this)
 #taint-effect -> what happen to pod if they do not tolarate taint
@@ -154,7 +154,7 @@ kubectl label nodes node10 size=Large
     # AMBESIDER - a service which use to connect to DB
          # connect container to external world(like proxy)
          # Ex : connecting to multiple DBs (based on the evn connect to dev,uat,prod databases) - mysql-proxy
-    # INIT container
+    # INIT container (use initContainers section of yaml file of the pod). Containers does not come up until the initContainers and run and exited
          # Always runs to completion. once all init contiainers are complted, then only the app container stats
          # Ex: download all html files before starting the nginx app container to a shared container
 
