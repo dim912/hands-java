@@ -6,6 +6,9 @@ k config set-context mycontext --namespace=mynamespace  #this only config the ku
 # vim ~/.vimrc
 set rnu
 set expandtab #when copy convert tabs into spaces
+set smartindent
+set tabstop=2
+set shiftwidth=2
 
 kubctl cluster-info
 kubectl create namespace dev
@@ -154,7 +157,8 @@ kubectl label nodes node10 size=Large
     # AMBESIDER - a service which use to connect to DB
          # connect container to external world(like proxy)
          # Ex : connecting to multiple DBs (based on the evn connect to dev,uat,prod databases) - mysql-proxy
-    # INIT container (use initContainers section of yaml file of the pod). Containers does not come up until the initContainers and run and exited
+    # INIT container (use initContainers section of yaml file of the pod).
+         # Containers does not come up until the initContainers and run and exited
          # Always runs to completion. once all init contiainers are complted, then only the app container stats
          # Ex: download all html files before starting the nginx app container to a shared container
 

@@ -6,6 +6,11 @@ metadata:
     app: myapp
     type: front-end
 spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate  #other type is Recreate(which kills all and then create fresh)
   template:
     metadata:
       name: mayapps-pod

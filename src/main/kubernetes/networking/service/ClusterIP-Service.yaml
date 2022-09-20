@@ -7,7 +7,6 @@ spec:
   ports:
     - targetPort : 80 #target port from pod   # default to port
       port: 80        #port of the service object   #THIS IS THE ONLY POD
-      nodePort: 30008 #port of the node (range from 30000 - 32776)  #default to a freely available port from node
   selector:   #so multiple pods in node can get the load shared from service (Algo used : Random)
     name: nginx-container
     dev: prod
