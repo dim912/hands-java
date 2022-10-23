@@ -305,6 +305,8 @@ kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=cl
 # Once PVC are created they are 1-1 matched to PVs by Kub my best match basis
     # a large PV might get bind to a small PVC if there is no other better match. But then PVC will start showing the full PV capacity
 # if there are no matching PVs -> PVC will be on Pending state until new PV is added to the cluster
+# then these PVCs can be mount as volumes in PODs
+# then these volumes can be mapped to PODs as volumeMaps
 
 kubectl delete persistentvolumeclaim myclaim
       #bu defult PV does not get deleted because (detault is persistentVolumeReclaimPolicy: Retain)
@@ -465,6 +467,16 @@ curl http://localhost:6443 -k
 #Role Base Access Control (RBAC) - in detail
       # refer RABC directory
 
+      # RBAC should be enabled at the API server configuratons
+      # flow is,
+      #   NAMESPACE LEVEL ROLE
+      #   create a role which grant access to a resource
+      #   create a rolebinding to bind the role to a user ( or group --> groups are still beta)
+      #
+      #   CLUSTER LEVEL ROLE
+      #   create a clusterrole which grant access to a resource
+      #   create a clusterrolebinding to bind the role to a user ( or group --> groups are still beta)
+
 kubectl describe pod kube-apiserver-controlplane -n kube-system
 
 kubectl get roles
@@ -496,20 +508,19 @@ kubectl auth can-i delete nodes --as dev-user --namespace testspace
 
 #Admision Controllers
 
-        # Example use cases (impement below rules)
+        # Example use cases (implement below rules)
             # only permit images from certain registery
-            # do not allo runAs root user
+            # do not allow runAs root user
             # only permit certain capabilities
             # Pod always has labels
-            # metadata must contain lables
+            # metadata must contain labels
 
-        #Inbuild Admission contorller (which validate the reqeusts like kubectl run ..)
+        #Inbuild Admission controller (which validate the requests like kubectl run ..)
            # AlwaysPullImages
            # DefaultStorageClass
            # EventRateLimit
            # NamespaceAutoProvision
            # Namespcaeexit
-
 
 #to know default enabled admisson controllers
 kube-apiserver -h | grep enable-admission-plugins
@@ -658,7 +669,7 @@ kubectl exec kube-apiserver-controlplane -n kube-system --kube-apiserver -h | gr
     # creates templates of kube yaml definition files and then values are passed from helm config file (value.yaml)
     # together kube template yaml and value.yaml creates the helm chart
     # common charts can be found on repository https://artifacthub.io/
-    help search hub wordpress #(community driven)
+    helm search hub wordpress #(community driven)
     #for other repos
     helm repo add bitnami https://charts.bitnami.com/bitnami
     helm repo list

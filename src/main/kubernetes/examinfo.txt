@@ -6,7 +6,6 @@ syllabus -  https://www.cncf.io/certification/ckad/
 # booking - https://trainingportal.linuxfoundation.org/learn/course/certified-kubernetes-application-developer-ckad/exam/exam
 # exam is on Ubuntu 20.04
 
-
 #preparation
 
 https://nlbsg.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/15015384#overview
@@ -27,3 +26,13 @@ https://www.linkedin.com/pulse/how-i-got-ckad-certification-2021-3-weeks-abdelah
 https://betterprogramming.pub/kubernetes-tips-create-pods-with-imperative-commands-in-1-18-62ea6e1ceb32
 
 https://www.linkedin.com/pulse/kubernetes-deep-dive-part-3-generators-quick-poc-atharva-chauthaiwale/
+
+
+#############     MOCK EXAMS     #############
+
+1) Mum - Lesson based questions
+2) Mum - Lightning Labs
+3) Mum - Mock Exam
+4) Cloud academy timed tests
+5) CKAD exam registration - sample tests
+

@@ -1,0 +1,265 @@
+faster way to dry run o yaml
+
+avoid runing when paste
+disable vim autoindentaion of yaml 
+security context - is fsGrop only at outside level ( not per container ? )
+
+Create a pod called time-check in the dvl1987 namespace. This pod should run a container called time-check that uses the busybox image. 
+* Create a config map called time-config with the data TIME_FREQ=10 in the same namespace. 
+* The time-check container should run the command: while true; do date; sleep $TIME_FREQ;done and write the result to the location /opt/time/time-check.log. 
+* The path /opt/time on the pod should mount a volume that lasts the lifetime of this pod.
+
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: time-check
+  name: time-check
+  namespace: dvl1987
+spec:
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+  containers:
+    - image: busybox
+      name: time-check
+      env:
+        - name: TIME_FREQ
+          valueFrom:
+            configMapKeyRef:
+              name: time-config
+              key: TIME_FREQ
+      volumeMounts:
+        - mountPath: /opt/time
+          name: log-volume
+      command:
+        - "/bin/sh"
+        - "-c"
+        - "while true; do date; sleep $TIME_FREQ;done > /opt/time/time-check.log"
+
+
+
+  ————
+  
+  
+  Create a new deployment called nginx-deploy, with one single container called nginx, image nginx:1.16 and 4 replicas. The deployment should use RollingUpdate strategy with maxSurge=1, and maxUnavailable=2.
+  Next upgrade the deployment to version 1.17.
+  Finally, once all pods are updated, undo the update and go back to the previous version.
+  
+  
+  
+  
+  Run the following command to create a manifest for deployment nginx-deploy and save it into a file:-
+  kubectl create deployment nginx-deploy --image=nginx:1.16 --replicas=4 --dry-run=client -oyaml > nginx-deploy.yaml
+  and add the strategy field under the spec section as follows:-
+strategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 2
+  So final manifest file for deployment called nginx-deploy should looks like below:-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-deploy
+  name: nginx-deploy
+  namespace: default
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: nginx-deploy
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 2
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: nginx-deploy
+    spec:
+      containers:
+        - image: nginx:1.16
+          imagePullPolicy: IfNotPresent
+          name: nginx
+  then run the kubectl apply -f nginx-deploy.yaml to create a deployment resource. Now, upgrade the deployment's image version using the kubectl set image command:-
+  kubectl set image deployment nginx-deploy nginx=nginx:1.17
+  Run the kubectl rollout command to undo the update and go back to the previous version:-
+  kubectl rollout undo deployment nginx-deploy
+  
+  
+  
+  ———————
+  
+  
+  
+  Create a redis deployment with the following parameters: Name of the deployment should be redis using the redis:alpine image. It should have exactly 1 replica. The container should request for .2 CPU. It should use the label app=redis. It should mount exactly 2 volumes. 
+  a. An Empty directory volume called data at path /redis-master-data. b. A configmap volume called redis-config at path /redis-master. c. The container should expose the port 6379. The configmap has already been created.
+  
+  
+  
+  
+  Solution manifest file to create a deployment redis as follows:-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+  name: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: redis-config
+          configMap:
+            name: redis-config
+      containers:
+        - image: redis:alpine
+          name: redis
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: data
+            - mountPath: /redis-master
+              name: redis-config
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: "0.2"
+
+
+
+########################################################################
+
+  Create a cronjob called dice that runs every one minute. Use the Pod template located at /root/throw-a-dice. The image throw-dice randomly returns a value between 1 and 6. The result of 6 is considered success and all others are failure.
+  The job should be non-parallel and complete the task once. Use a backoffLimit of 25.
+  If the task is not completed within 20 seconds the job should fail and pods should be terminated.
+  
+  You don't have to wait for the job completion. As long as the cronjob has been created as per the requirements.
+
+piVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dice
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      completions: 1
+      backoffLimit: 25 # This is so the job does not quit before it succeeds.
+      activeDeadlineSeconds: 20
+      template:
+        spec:
+          containers:
+            - name: dice
+              image: kodekloud/throw-dice
+          restartPolicy: Never
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dice
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 20
+      completions: 1
+      backoffLimit: 25
+      template:
+        spec:
+          containers:
+            - image: kodekloud/throw-dice
+              name: throw-dice
+          restartPolicy: Never
+
+
+
+
+
+  Create a pod called my-busybox in the dev2406 namespace using the busybox image. The container should be called secret and should sleep for 3600 seconds.
+  
+  The container should mount a read-only secret volume called secret-volume at the path /etc/secret-volume. The secret being mounted has already been created for you and is called dotfile-secret.
+  
+  Make sure that the pod is scheduled on controlplane and no other node in the cluster.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: my-busybox
+  name: my-busybox
+  namespace: dev2406
+spec:
+  volumes:
+    - name: secret-volume
+      secret:
+        secretName: dotfile-secret
+  nodeSelector:
+    kubernetes.io/hostname: controlplane
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+  containers:
+    - command:
+        - sleep
+      args:
+        - "3600"
+      image: busybox
+      name: secret
+      volumeMounts:
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/etc/secret-volume"
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: my-busybox
+  name: my-busybox
+  namespace: dev2406
+spec:
+  volumes:
+    - name: secret-volume
+      secret:
+        secretName: dotfile-secret
+  nodeSelector:
+    kubernetes.io/hostname: controlplane
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+  containers:
+    - command:
+        - sleep
+      args:
+        - "3600"
+      image: busybox
+      name: secret
+      volumeMounts:
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/etc/secret-volume"
+
+
+  A pod called dev-pod-dind-878516 has been deployed in the default namespace. Inspect the logs for the container called log-x and redirect the warnings to /opt/dind-878516_logs.txt on the controlplane node
+  
+  
+  kubectl logs dev-pod-dind-878516 -c log-x | grep WARNING > /opt/dind-878516_logs.txt
+
