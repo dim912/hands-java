@@ -1,0 +1,384 @@
+AWS root account : dim912.aws@gmail.com
+pwd : awsroot
+
+#create IAM user
+userName: terraform
+key should be generated for "local access key"
+access key: AKIAWWRZ5LCFV7IK7NGO
+secret key: secret_key_val
+
+export AWS_ACCESS_KEY_ID="AKIAWWRZ5LCFUQSWBHZT"
+export AWS_SECRET_ACCESS_KEY="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"
+
+state ==> maintain the mapping between the resources(config files) and the destination(actual entities created at aws)
+
+terrafrom plan interllay runs terrafrom refresh ( this internally pull the resouce info from AWS and update the state file.
+But it does not apply the changes of config files into the state)
+
+terraform apply internally run tf plan ( so it runs tf refresh also)
+
+tf apply can be done on a pre saved plan too
+
+so both terrafrom plan and terrafrom refresh lock the state file
+
+for some properties ( ex: key pair of ec2) => instnace is deleted and recreated by tf provider
+for some properties ( ex: tags) => instance is updated by tf provider
+this behaviour depends on the provider
+
+when tf projects are too large ==> destroy/adjusting becomes complex and time taking. Hence small tf projects are recommender
+
+## known issues & behaviour
+
+1.  resource "aws_instance" "app_server" {
+    ami = "ami-005835d578c62050d"
+    instance_type = "t1.micro"
+    vpc_security_group_ids = [aws_security_group.enable_ping_sg.id]
+    tags = { //if tags are added, then tf does not recreate the aws instance, instead it update the instance. if this tag is added manually directly on aws console => then tf plan will shows nothing to change
+    name="HelloWorld"
+    }
+    }
+
+resource "aws_instance" "app_server" {
+ami = "ami-005835d578c62050d"
+instance_type = "t1.micro"
+//vpc_security_group_ids = [aws_security_group.enable_ping_sg.id]
+tags = { //if tags are added, then tf does not recreate the aws instance, instead it update the instance. if this tag is added manually directly on aws console => then tf plan will shows nothing to change
+name="HelloWorld"
+}
+}
+
+- here once vpc_security_group_ids is commented ==> tf does not identify it as a change on the resouces
+
+2. tf destroy is complicated ( resouces might not get deleted since those are attached to other resources. dependencies from other projects)
+   (ex : security gorup is in security project and ec2 are in server project. Now we try to delete the Sg)
+
+3. removing an resouce from tf config file might not work well ( since is since the resouce is already attachd to others )
+   tf does not know how to manage these dependeing resouces
+   Ex : deleting a SG from conf and removing it from the aws_instance configs ===> this will not distroy the SG ( will stuck ) since TF does not know
+   taht first it has to unbind the SG from aws_instnace and then delete. ( TF is not aware about this)
+
+every command as plan, apply, refresh, destroy shows the output
+
+workspace - gaurantee a separate state file per workspace
+
+## posisble fair failures
+
+sg group project - sg-A
+ec2 project - ec2-A ( which uses the sg-A )
+
+sg group project - sg-A ==> rename to sg-B ==> next apply expect to delete-A and create-B. But apply fails until ec2-A is deleted.
+ec2 project - ec2-A ( which uses the sg-A ) ==> change config to user SG-B. ec2 an not be created again until SG is created. (adding/removing does not delete instance, but udpates it)
+
+- so this is a dead lock ==> since aws does not allow to delete A since it is used by the ec2. ( happen even SG and EC2 are in the same tf project)
+
+
+
+terraform init -upgrade # to update the version of provider ( all providers)
+
+locals can refer to a local
+
+locals can not refer to variables/locals in circular way
+
+module versions are only supported for modules from registeris
+
+to access private registery modules
+            ==> hostname/namespace/name/provider
+            ==> app.terform.io/example_corp/vpc/aws
+            ==> version = "0.0.9"
+
+tf force-unlock <lockID>
+
+TFE
+-----
+SSO
+audit
+private data center networking
+coloboration
+clusetring
+
+export TF_VAR_region = us-west-1
+export TF_VAR_ami    = ami-23423
+export TF_VAR_alist  = '[1,2,3]'
+
+* env variable can be used to set TF variables
+
+
+when moving backends --> TF provides an option to migrate the existing state to new backend ( so state is not lost )
+
+backends can be confiured with partical data (ex : consule {})  ==> here otehr parameters must be passed at init. ( propotol, address etc)
+
+by default proviioner failures cause to fail 'tf apply' (this behaviour can be changed uing on_failure=continue ,    fail ==> fail and stop applying )
+
+for custom var file ==> tf apply -var-file = customName.tfvars
+
+>=2.10, <=2.30 => any between
+~>2.0          => any version in 2.X range
+~>2.0.0        => any version in 2.0.X range
+
+
+taining a resource coming from a module
+
+tf taint module.couchbase.aws_instance.cb_node[9]
+
+for sub modules > module.foo.module.bar.aws_instnace.xasfd
+
+//to view the impact of tf destroy ==> can do ' tf plan -destroy'
+
+to save rate limits from provider(Aws) ==> user -refresh=false ,,   -target=<resouce> ( both are not recommanded )
+
+//tf plan,apply, destroy ==> run tf refhrsh implicity
+//tf init, import ==> does not run refresh
+
+//array data type is not supported by tf
+
+list ==> shorthand for list(any) ==> accept any elemnt with same type
+
+reserved words
+count
+depends_on
+for_each
+lifecycle
+providers
+
+
+index(["a", "b", "c"], "b") //index function returns the index of a object
+1
+
+
+PTFE == Private Terraform Enterprise
+        ==> supports PostGressSQL, S3, GCP cloud store, Aure blob as object store
+        ==> can configure to use inhouse vault too
+
+supported VCSs
+GitHub.com
+GitHub.com (OAuth)
+GitHub Enterprise
+GitLab.com
+GitLab EE and CE
+Bitbucket Cloud
+Bitbucket Server
+Azure DevOps Server
+Azure DevOps Services
+
+
+
+github IS NOT A SUPPORTED BACKEND in TF
+
+tf init downloads into ==> .terraform/plugins directory
+
+API and CLI access to TF managed though ==> tokens genreated on TF cloud UI
+
+TF paralizasm factor max is 10
+
+tf recomanded intendation is 2 spaces
+
+TF CLI configs ==> https://developer.hashicorp.com/terraform/cli/config/config-file
+.terraformrc
+terraform.rc
+
+tf  get  ==>     Install or upgrade remote Terraform modules
+
+
+Learnings from Tests
+=======================
+
+1) commonly use expressions can be abstracted into locals
+
+2) workspaces are saved into ==> .terraform.tfstate.d folder
+
+3) import statement is (TF conf first , then actual resource)
+
+4) terraform import aws_instance.<name in tf file>   i-asdfad<actual resocue ID>
+
+5) when tf apply is run ==> only outputs of root module is printed to console
+
+6) below cause to error at the "tf plan"  ==> returns │ Error: Duplicate provider configuration
+provider aws {
+   region = "eu-west-1"
+}
+provider aws {
+   region = "eu-west-2"
+}
+
+//both 2 and "2" are accepted as values for below String
+variable "myvar" {
+  type = string
+}
+
+7) Sentinel feature  is applied after plan before Apply
+
+8) Terraform console command can be used to try out complex manipulation operations (tf console)
+
+9) env variables for inputs TF_VAR_name  ( not TF_VAR_NAME)
+TF_LOG
+TF_LOG_PATH
+TF_INPUT=0 // TF_INPUT=false ( disable comfirmation prompt)
+TF_VAR_name // ( name must be simple letters )
+TF_CLI_ARGS="-input=false"
+TF_CLI_ARGS_plan="-refresh=false" (plan, apply or destroy. )
+TF_DATA_DIR ==> replace the .terraform directory location (.terrafrom contains the provisioner and module source codes. But not state files)
+TF_WORKSPACE ==> similart to "tf workspace select prod"
+TF_IN_AUTOMATION ==> when set to a non zero value. TF console output avoids suggesting specific commands to run next
+TF_REGISTRY_DISCOVERY_RETRY ==> configure max number of retires that remote register client will attept to connect to remote
+TF_REGISTRY_CLIENT_TIMEOUT=15 ==> default timeout is 10s.
+TF_CLI_CONFIG_FILE
+TF_IGNORE ==>  when set to trace -> TF output debug messages to deisplay ignored files via (.terraformignore files)
+
+.terrafromignore file ==> when executing a remote plan or apply ==> the files listed on .terraformignore will not be uploaded to remote
+( only the .terraformignore at top of the directory is considered)
+
+
+
+10) TF could business plan featues
+https://www.hashicorp.com/products/terraform/pricing/
+
+tf enterprise ==> private installation ==> comes with audit logi, SSO/SAML, private networking, performane, support, clustering
+tf cloud ==> multi tenatn SaaS (free tier + can buy services as team managemnt, sentinal , run task, additonal concurrency
+
+11) free TF cloud does not support ==> Team managemnt
+
+12) TF variable precedence in cloud
+
+-var -var-file > TF_VAR_name > terraform.tfvars
+
+13)
+*.auto.tfvars
+terraform.tfvars clould does not automatically load from terraform.tfvars file
+
+remote exec provisioner supports
+https://www.terraform.io/language/resources/provisioners/remote-exec
+* ssh
+* WinRM
+onfailure ==> only applicable to last command( this is a limitaiton ). previou commands may still execute/fail
+
+resource "aws_instance" "web" {
+
+  provisioner "file" {
+    source      = "script.sh"
+  //sources     = ["script.sh",........................]
+    destination = "/tmp/script.sh"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x /tmp/script.sh",
+      "/tmp/script.sh args",
+    ]
+  }
+
+}
+
+14)
+import command
+https://www.terraform.io/cli/commands/import
+tf import <address in tf files> <ID in remote>
+* for EC2 ==> ID is EC2 instance ID (i-1232), for route53  it is the zoneID (XSd434X). refer provider documentation for ID
+
+terraform import aws_instance.foo i-abcd1234
+terraform import module.foo.aws_instance.bar i-abcd1234    #import into a module
+terraform import 'aws_instance.baz[0]' i-abcd1234          #import into count
+terraform import 'aws_instance.baz["example"]' i-abcd1234  #import into for_each
+
+15)
+to push modules to tf registery
+https://www.terraform.io/registry/modules/publish#requirements
+github,
+name of the module => teraform-provider-name  (terraform-google-vault, terraform-aw-ec2-instance)
+readme
+standard module structure
+semantic versioed tags ==> x.y.zhhhA  (v1.0.6)
+
+16)
+//terraform supported OSs
+https://www.terraform.io/enterprise/requirements/os-specific/supported-os
+select ALl except Android and Unix
+
+17)
+state locking is supported in
+local ,S3(support locking and consistency checking via DynmoDB), Azurerm, Consul, cos, gcs
+
+http ==> optionally support locking
+terraform {
+  backend "http" {
+    address = "http://myrest.api.com/foo"
+    lock_address = "http://myrest.api.com/foo"
+    unlock_address = "http://myrest.api.com/foo"
+  }
+}
+
+17) TF enterprise supported data storages
+https://www.terraform.io/enterprise/install/pre-install-checklist
+PostgresSQL
+docker
+
+
+18) support VCS
+https://www.terraform.io/docs/cloud/vcs/index.html
+github, gitlab,  bitbucket cloud, Azur DevOps server, Azure devops service
+
+19) is it possible to use locally developed providers ( not pulling from registery)
+
+20) TF vault integration ==> is though Vault provider (vault provider)
+
+21) Terraform Cloud provide feature to encrypt the state file stored at-rest and also support SSL/TLS for in-transit data
+
+22) lookup function (map, key, default)
+
+23)tf format does not scan all folders/sub folders
+
+24) depends_on ==> explicitly say it
+
+25) hashcorp does not verify all the modules pushed to reg
+
+14
+
+34
+
+35
+
+24
+
+27
+
+28
+
+29
+
+Question 16:
+
+===================================================================================
+
+default parallaizam is 10. can be changed it using -parallesim=n
+
+Terraform is immutable (directly define what we need. Not writing what change we need)
+
+variables without type is accelted ( no complain )
+
+values for a list shoudl be =>  [2,4,5] ==> not {2,3,4}
+
+private moduels (alllowed in free cloud version and above)
+private module -> HOST_NAME/NAME_SPACE/NAME/PROVIDER
+private module -> NAME_SPACE/NAME/PROVIDER
+
+with Terraform 0.13 and above, terraform init can now automatically download community providers.
+
+HashiCorp Certified: Terraform Associate 2023
+
+terraform apply -replace=aws.ince.web ==> this force create the resouce (replace can be used with both plan and apply)
+(this is simiar to taint and apply. But taint is depricated now)
+
+community providers in tf init ==> downloads with tf init automatically after tf 0.13
+
+tf init or tf get (both download/update modules mentioned in the root module)
+
+tf refresh vs tf apply --refresh-only (same as tf refresh. but tf refresh is depricated)
+--fresh-only ==> allow to reveiw and update state file. works with enterprice/cloud
+
+At what stage TF retrive the data ==> At 'tf plan'
+
+after a tf module is downloaded ==> if version is removed in config ==> still the same module version will be used by tf project
+
+when refering from data block it always starts with data.
+
+
+

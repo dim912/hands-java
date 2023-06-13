@@ -1,0 +1,38 @@
+#localsetup
+minikube
+
+syllabus -  https://www.cncf.io/certification/ckad/
+
+# booking - https://trainingportal.linuxfoundation.org/learn/course/certified-kubernetes-application-developer-ckad/exam/exam
+# exam is on Ubuntu 20.04
+
+#preparation
+
+https://nlbsg.udemy.com/course/certified-kubernetes-application-developer/learn/lecture/15015384#overview
+Practice Tests
+Section - 2
+    1) Introduction - 1
+    2) Pods - 1
+    3) ReplicaSets - 1
+    2) Deployments - 1
+    2) NameSpaces - 1
+    2) ImperativeCommands - 1
+
+https://medium.com/bb-tutorials-and-thoughts/practice-enough-with-these-questions-for-the-ckad-exam-2f42d1228552
+https://github.com/dgkanatsios/CKAD-exercises
+
+https://www.linkedin.com/pulse/how-i-got-ckad-certification-2021-3-weeks-abdelahad-satour/
+
+https://betterprogramming.pub/kubernetes-tips-create-pods-with-imperative-commands-in-1-18-62ea6e1ceb32
+
+https://www.linkedin.com/pulse/kubernetes-deep-dive-part-3-generators-quick-poc-atharva-chauthaiwale/
+
+
+#############     MOCK EXAMS     #############
+
+1) Mum - Lesson based questions
+2) Mum - Lightning Labs
+3) Mum - Mock Exam
+4) Cloud academy timed tests
+5) CKAD exam registration - sample tests
+

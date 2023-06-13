@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: math-add-job
+spec:
+  completions: 3 # 3 container will be created one after the other (will be three completions. failed taks will not be counted)
+  parallelism: 3 # start 3 jobs and run until 3 jobs get completed
+  template:
+    spec:
+      containers:
+        - name: math-add
+          image: ubuntu
+          command: ['expr','3','+','2']
+      restartPolicy: Never
+  backoffLimit: 4 #retries if fails
+
+
+
+

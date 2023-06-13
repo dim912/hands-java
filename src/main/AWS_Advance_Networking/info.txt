@@ -1,0 +1,60 @@
+images
+https://docs.google.com/document/d/1YB_uQI_nnCuKvu4q-JIerhCEsMcQsKojl9L9zhPhDik/edit
+
+VPC    at region level  - Virtual Private Cloud ( private networking ). A virtual network.
+Subnet at AZ level      - each AZ inside VPC has it own subnet
+                        - private subnet - Ex: app server
+                        - public subnet  - connects to internet - Ex: web server sit in public subnet. Or LB sits in public subnet
+                                         - when subnet is connected to a routing table which point traffic to internet --> then subnet is a public subnet
+                                         - in default VPC, all subnets are public subnets
+Internet GW at region   - at region level - to connect public subnets to internet
+
+PVC Peering - connecting one VPC to other privately ( PVCs can be owned by differnt orgs/accounts)
+
+Transient GW - connecting many VPCs to each other and with on prime networks too ( star  topology )
+             - on prime connect to transigent GW through direct connect or VPN
+
+VPC GW         endpoints - connecting the S3/Dynmo DB to apps within the same region (otherwise traffic goes through internet)
+VPC interface  endpoints -  apps can be connected to SQS/ SNS  / Lambda -
+
+priavte link - expose the serveice via LB, cosumer VPC can connect to service provider though privateLink
+             - VPC peering is VPC to VPC. so it is more broader and less secure. But private link is VPC to service
+
+route53 - are pointed to LB
+
+floud front - CDN
+
+flow Logs - capture packets / can point to S3
+
+site to site VPN -
+                 - VPC side needs a VGW (Vertual gatewa)
+                 - using this VGW can cnnect to the on prime router through VPN
+
+direct connect
+                 -
+clinet to site VPN endpoint - conencting the PCs ( ex employess working from home ) directly to the VPC over public internet
+
+
+section 4
+---------
+
+Global Level - route53, IAM, Billing
+Region Level - S3, Dynmo DB, SNS, SQS
+VPC level - ELB, VPN, IGW
+AZ / Subnet level - EC2, RDS, EBS
+
+
+0.0.0./0 --> All IP address to the hosts ( whole world )
+
+private IP ranges
+    -> 10.xxx.xxx.xxx                               - 10.0.0.0/8          -- big networks
+    -> 172.16.xx.xx - 172.31.xxxx ( defualt vpc)    - 172.16.0.0/12       -- default vpc
+    -> 192.168.0.0 - 192.168.255.255                - 192.168.0.0/16      --- home network
+
+all other IPs are public IPs
+
+AWS  VPC CIDR range is == > /16 to /28
+
+
+
+

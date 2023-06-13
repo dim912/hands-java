@@ -1,0 +1,7 @@
+Assume the org has multiple departments and each has its own responsibilities of creating aws resouces
+
+ - network
+ - security
+ - server team
+
+- so in this model, each other can access the state of the resources created by other departments though 'terraform_remote_state'

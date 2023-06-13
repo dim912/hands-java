@@ -1,0 +1,4 @@
+#PV can be
+  # static created by kube admin -> then get mapped to Storage volume claims on best matching basis
+  # can be dymanically created by Storage Class claims
+  # can be dymanically created by Storage Class claims

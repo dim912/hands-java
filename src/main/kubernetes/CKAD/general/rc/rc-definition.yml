@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: mayapps-rc
+  labels: #labels of replicaset itself
+    app: myapp
+    type: front-end
+spec:
+  template:
+    metadata:
+      name: mayapps-pod
+      labels: #lables of the pods of replicaset
+        app: myapp
+        type: front-end  # between labels &
+        costcenter: amer
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx
+  replicas: 3
+
+
