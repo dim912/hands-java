@@ -1,6 +1,0 @@
-apiVersion: v1   #nginx will be using this servie accunt to know the information about other servers to which nginx route traffic to
-kind: ServiceAccount
-metadata: v1
-  name: nginx-ingress-serviceaccount
-
-#this needs correct roles and role bindings also

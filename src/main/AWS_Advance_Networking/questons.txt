@@ -1,3 +1,0 @@
-
-questions ?
-1) lambda connect to internet though a NAT GW

@@ -1,5 +1,0 @@
-k roleout history deploymnet nginxdeploy
-
-k roleout history undo nginxdeploy
-
-k roleout history undo nginxdeploy --revision=2
